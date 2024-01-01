@@ -194,34 +194,33 @@ sampler2D BigBlurM { Texture = bigblur; MagFilter = POINT; MinFilter = POINT; Mi
 /*-------------.
 | :: Effect :: |
 '-------------*/
-
 float3 BlurPass( float2 Tex, bool Horizontal, float SIGMA, sampler SAMP){
 	//this function blurs in one direction based on the bool Horizontal
 	float2 Direction = Horizontal ? float2(1.0, 0.0) : float2(0.0, 1.0);
     float2 PixelSize = (1.0 / float2(BUFFER_WIDTH, BUFFER_HEIGHT)) * Direction;
     float KernelSize = SIGMA * 3.0;
-if(SIGMA == 0.0)
-    {
-        //skips the for loop when no blurring is actually specified, saves on time
-		return tex2D(SAMP, float2(Tex)).rgb;
-    }
-    else
-    {
-        // Sample and weight center first to get even number sides
-        float TotalWeight = GetGaussianWeight(0.0, SIGMA);
-        float3 OutputColor = tex2D(SAMP, Tex).rgb * TotalWeight;
+	if(SIGMA == 0.0)
+		{
+			//skips the for loop when no blurring is actually specified, saves on time
+			return tex2Dlod(SAMP, float4(Tex, 0.0, 0.0)).rgb;
+		}
+		else
+		{
+			// Sample and weight center first to get even number sides
+			float TotalWeight = GetGaussianWeight(0.0, SIGMA);
+			float3 OutputColor = tex2D(SAMP, Tex).rgb * TotalWeight;
 
-        for(float i = 1.0; i < KernelSize; i += 2.0)
-        {
-            float LinearWeight = 0.0;
-            float LinearOffset = GetGaussianOffset(i, SIGMA, LinearWeight);
-            OutputColor += tex2D(SAMP, float2(Tex - LinearOffset * PixelSize)).rgb * LinearWeight;
-            OutputColor += tex2D(SAMP, float2(Tex + LinearOffset * PixelSize)).rgb * LinearWeight;
-            TotalWeight += LinearWeight * 2.0;
-        }
-        // Normalize intensity to prevent altered output
-        return OutputColor/ TotalWeight;
-    }
+			for(float i = 1.0; i < KernelSize; i += 2.0)
+			{
+				float LinearWeight = 0.0;
+				float LinearOffset = GetGaussianOffset(i, SIGMA, LinearWeight);
+				OutputColor += tex2Dlod(SAMP, float4(Tex - LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
+				OutputColor += tex2Dlod(SAMP, float4(Tex + LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
+				TotalWeight += LinearWeight * 2.0;
+			}
+			// Normalize intensity to prevent altered output
+			return OutputColor/ TotalWeight;
+		}
 }
 
 
@@ -250,22 +249,22 @@ float3 jump( float2 tex, int sizi, sampler samp){
 	}
 
 	//runs a bunch of "contests" to determine the most appropreate candidate from the 8 queen moves with distance sizi
-	float2 cand = tex2D(samp, tex+sizl*float2(0,1)).rg;
+	float2 cand = tex2Dlod(samp, float4(tex+sizl*float2(0,1),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
-	cand = tex2D(samp, tex+sizl*float2(1,0)).rg;
+	cand = tex2Dlod(samp, float4(tex+sizl*float2(1,0),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
-	cand = tex2D(samp, tex+sizl*float2(0,-1)).rg;
+	cand = tex2Dlod(samp, float4(tex+sizl*float2(0,-1),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
-	cand = tex2D(samp, tex+sizl*float2(-1,0)).rg;
+	cand = tex2Dlod(samp, float4(tex+sizl*float2(-1,0),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
 	siz = siz*1.41421356;
-	cand = tex2D(samp, tex+sizl*float2(1,1)).rg;
+	cand = tex2Dlod(samp, float4(tex+sizl*float2(1,1),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
-	cand = tex2D(samp, tex+sizl*float2(1,-1)).rg;
+	cand = tex2Dlod(samp, float4(tex+sizl*float2(1,-1),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
-	cand = tex2D(samp, tex+sizl*float2(-1,-1)).rg;
+	cand = tex2Dlod(samp, float4(tex+sizl*float2(-1,-1),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
-	cand = tex2D(samp, tex+sizl*float2(-1,1)).rg;
+	cand = tex2Dlod(samp, float4(tex+sizl*float2(-1,1),0.0,0.0)).rg;
 	win = contest(win, cand, siz);
 	return float3(win,0);
 }
@@ -333,7 +332,7 @@ float3 finisher(float4 position : SV_Position, float2 texcoord : TEXCOORD) : SV_
 				if(ordered){
 				gry = gry+((cellp.x)+(cellp.x==cellp.y)*2.-1.5)/((GreyLevel-1)*6./DithDeg);
 				}else{
-				gry = gry+(tex2D(BlueNoiseSamp, pointint/float2(256,256) ).r*DithDeg-0.5*DithDeg)/(GreyLevel-1.);
+				gry = gry+(tex2Dlod(BlueNoiseSamp, float4(pointint/float2(256,256),0.0,0.0) ).r*DithDeg-0.5*DithDeg)/(GreyLevel-1.);
 				}
 			}
 			if(EdgeDetect){
@@ -398,6 +397,4 @@ technique DINNDX{
 	}
 
 }
-
-
 
