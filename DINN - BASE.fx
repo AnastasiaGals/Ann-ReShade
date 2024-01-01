@@ -137,7 +137,7 @@ float3 BlurPass( float2 Tex, bool Horizontal, float SIGMA, sampler SAMP){
 	if(SIGMA == 0.0)
 		{
 			//skips the for loop when no blurring is actually specified, saves on time
-			return tex2D(SAMP, float2(Tex)).rgb;
+			return tex2Dlod(SAMP, float4(Tex, 0.0, 0.0)).rgb;
 		}
 		else
 		{
@@ -149,8 +149,8 @@ float3 BlurPass( float2 Tex, bool Horizontal, float SIGMA, sampler SAMP){
 			{
 				float LinearWeight = 0.0;
 				float LinearOffset = GetGaussianOffset(i, SIGMA, LinearWeight);
-				OutputColor += tex2D(SAMP, float2(Tex - LinearOffset * PixelSize)).rgb * LinearWeight;
-				OutputColor += tex2D(SAMP, float2(Tex + LinearOffset * PixelSize)).rgb * LinearWeight;
+				OutputColor += tex2Dlod(SAMP, float4(Tex - LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
+				OutputColor += tex2Dlod(SAMP, float4(Tex + LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
 				TotalWeight += LinearWeight * 2.0;
 			}
 			// Normalize intensity to prevent altered output
@@ -177,7 +177,7 @@ float3 finisher( float2 tex )
 				if(ordered){
 					gry = gry+((cellp.x)+(cellp.x==cellp.y)*2.-1.5)/((GreyLevel-1)*6./raamp);
 				}else{
-					gry = gry+(tex2D(BlueNoiseSamp, pointint/float2(256,256) ).r*raamp-0.5*raamp)/(GreyLevel-1.);
+					gry = gry+(tex2Dlod(BlueNoiseSamp, float4(pointint/float2(256,256),0.0,0.0 )).r*raamp-0.5*raamp)/(GreyLevel-1.);
 				}
 			}
 			gry = saturate((trunc(gry*GreyLevel))/(GreyLevel-1.));
@@ -221,5 +221,3 @@ technique DINN
 		PixelShader=PS_ANN;
 	}
 }
-
-
