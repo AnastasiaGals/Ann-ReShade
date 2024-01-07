@@ -16,7 +16,7 @@
 
 #include "ReShadeUI.fxh"
 #include "ReShade.fxh"
-#include "cImageProcessing.fxh"
+#include "shared/cImageProcessing.fxh"
 //credit for this effect goes to the people who made cshade
 /*------------------.
 | :: UI Settings :: |
