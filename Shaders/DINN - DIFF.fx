@@ -106,6 +106,14 @@ uniform bool ordered  <
 	ui_tooltip = "gives you ordered dither";
 > = 0;
 
+uniform int orderedmask  < __UNIFORM_SLIDER_INT1
+	ui_min = 2;
+	ui_max = 4;
+	ui_label = "ordered dither mask choice";
+	ui_category = "greyscale";
+	ui_tooltip = "gives you ordered dither";
+> = 2;
+
 uniform float DithDeg < __UNIFORM_SLIDER_FLOAT1
 	ui_label = "how far does one dither";
 	ui_category = "greyscale";
@@ -190,6 +198,9 @@ sampler2D BLURSTOREs { Texture = BLURSTORE; MagFilter = POINT; MinFilter = POINT
 
 texture bigblur {Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA16F; };
 sampler2D BigBlurM { Texture = bigblur; MagFilter = POINT; MinFilter = POINT; MipFilter = POINT; };
+
+#define DITHER_MATRIX1 float3x3(0.75,-0.75,0.25,-0.5,-1,0,0.5,-0.25,1)
+#define DITHER_MATRIX2 float4x4(0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5)
 
 /*-------------.
 | :: Effect :: |
@@ -330,7 +341,13 @@ float3 finisher(float4 position : SV_Position, float2 texcoord : TEXCOORD) : SV_
 		//adds a dither mask if specified and seperates out different levels
 			if (dither){
 				if(ordered){
-				gry = gry+((cellp.x)+(cellp.x==cellp.y)*2.-1.5)/((GreyLevel-1)*6./DithDeg);
+				if(orderedmask==2){
+					gry = gry+((cellp.x)+(cellp.x==cellp.y)*2.-1.5)/((GreyLevel-1)*6./DithDeg);
+				}else if(orderedmask==3){
+					gry = gry +1.5*DITHER_MATRIX1[pointint.x % 3][pointint.y % 3] /((GreyLevel-1)*6./DithDeg);
+				}else{
+					gry = gry + 1.5*(DITHER_MATRIX2[pointint.x % 4][pointint.y % 4]/7.5-1 )/((GreyLevel-1)*6./DithDeg);
+				}
 				}else{
 				gry = gry+(tex2Dlod(BlueNoiseSamp, float4(pointint/float2(256,256),0.0,0.0) ).r*DithDeg-0.5*DithDeg)/(GreyLevel-1.);
 				}

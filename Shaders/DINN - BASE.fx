@@ -99,7 +99,15 @@ uniform bool ordered  <
 	ui_tooltip = "gives you ordered dither";
 > = 0;
 
-uniform float raamp < __UNIFORM_SLIDER_FLOAT1
+uniform int orderedmask  < __UNIFORM_SLIDER_INT1
+	ui_min = 2;
+	ui_max = 4;
+	ui_label = "ordered dither mask choice";
+	ui_category = "greyscale";
+	ui_tooltip = "gives you ordered dither";
+> = 2;
+
+uniform float DithDeg < __UNIFORM_SLIDER_FLOAT1
 	ui_label = "how far does one dither";
 	ui_category = "greyscale";
 	ui_min = 0.01; ui_max = 5.0;
@@ -125,7 +133,8 @@ uniform float SIG < __UNIFORM_SLIDER_FLOAT1
 texture BlueNoise < source ="HDR_LA_3.png" ; > { Width = 256; Height = 256; };
 sampler BlueNoiseSamp { Texture = BlueNoise; AddressU = REPEAT;	AddressV = REPEAT;	AddressW = REPEAT;};
 
-
+#define DITHER_MATRIX1 float3x3(0.75,-0.75,0.25,-0.5,-1,0,0.5,-0.25,1)
+#define DITHER_MATRIX2 float4x4(0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5)
 /*-------------.
 | :: Effect :: |
 '-------------*/
@@ -170,14 +179,20 @@ float3 finisher( float2 tex )
 	if(greyscale){
 		float gry = dot(col, Greyscale_vector);
 		if(diag){
-			gry = Pointer.x;
+		gry = Pointer.x;
 		}
 		if (GreyLevel > 1) {
 			if (dither){
 				if(ordered){
-					gry = gry+((cellp.x)+(cellp.x==cellp.y)*2.-1.5)/((GreyLevel-1)*6./raamp);
+					if(orderedmask==2){
+						gry = gry+((cellp.x)+(cellp.x==cellp.y)*2.-1.5)/((GreyLevel-1)*6./DithDeg);
+					}else if(orderedmask==3){
+						gry = gry +1.5*DITHER_MATRIX1[pointint.x % 3][pointint.y % 3] /((GreyLevel-1)*6./DithDeg);
+					}else{
+						gry = gry + 1.5*(DITHER_MATRIX2[pointint.x % 4][pointint.y % 4]/7.5-1 )/((GreyLevel-1)*6./DithDeg);
+					}
 				}else{
-					gry = gry+(tex2Dlod(BlueNoiseSamp, float4(pointint/float2(256,256),0.0,0.0 )).r*raamp-0.5*raamp)/(GreyLevel-1.);
+					gry = gry+(tex2Dlod(BlueNoiseSamp, float4(pointint/float2(256,256),0.0,0.0 )).r*DithDeg-0.5*DithDeg)/(GreyLevel-1.);
 				}
 			}
 			gry = saturate((trunc(gry*GreyLevel))/(GreyLevel-1.));
