@@ -16,8 +16,9 @@
 
 #include "ReShadeUI.fxh"
 #include "ReShade.fxh"
-#include "shared/cImageProcessing.fxh"
-//credit for this effect goes to the people who made cshade
+#include "shared/cGraphics.fxh"
+#include "shared/cConvolution.fxh"
+//credit for this effect goes to the people who made cshade, papadanku
 /*------------------.
 | :: UI Settings :: |
 '------------------*/
