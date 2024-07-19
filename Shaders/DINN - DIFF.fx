@@ -219,19 +219,20 @@ float3 BlurPass( float2 Tex, bool Horizontal, float SIGMA, sampler SAMP){
 		else
 		{
 			// Sample and weight center first to get even number sides
-			float TotalWeight = GetGaussianWeight(0.0, SIGMA);
-			float3 OutputColor = tex2D(SAMP, Tex).rgb * TotalWeight;
-
-			for(float i = 1.0; i < KernelSize; i += 2.0)
-			{
-				float LinearWeight = 0.0;
-				float LinearOffset = GetGaussianOffset(i, SIGMA, LinearWeight);
-				OutputColor += tex2Dlod(SAMP, float4(Tex - LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
-				OutputColor += tex2Dlod(SAMP, float4(Tex + LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
-				TotalWeight += LinearWeight * 2.0;
-			}
-			// Normalize intensity to prevent altered output
-			return OutputColor/ TotalWeight;
+	        float TotalWeight = CConvolution_GetGaussianWeight(0.0, SIGMA);
+	        float3 OutputColor = tex2D(SAMP, Tex).rgb * TotalWeight;
+	
+	        for(float i = 1.0; i < KernelSize; i += 2.0)
+	        {
+	            float LinearWeight = 0.0;
+	            float LinearOffset = CConvolution_GetGaussianOffset(i, SIGMA, LinearWeight);
+	            OutputColor += tex2Dlod(SAMP, float4(Tex - LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
+	            OutputColor += tex2Dlod(SAMP, float4(Tex + LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
+	            TotalWeight += LinearWeight * 2.0;
+	        }
+	
+	        // Normalize intensity to prevent altered output
+	        return OutputColor / TotalWeight;
 		}
 }
 
