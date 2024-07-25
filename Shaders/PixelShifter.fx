@@ -3,6 +3,7 @@
 '-------------------/
 	it moves pixels one side or another in an alternating pattern
 	not spectecular, but it does the job as a corruption effect, or turn on the horizontal bar effect for some of the visual flair interlaced video can provide
+	also X and Y are seperate effects so you can throw some other shaders inbetween, may be funny with edge detection or blur perhaps
 */
 
 
@@ -70,13 +71,47 @@ float3 PS_PixelShift(float4 position : SV_Position, float2 texcoord : TEXCOORD) 
 	int2 pointint = trunc((texcoord/ (PixelBlock*BUFFER_PIXEL_SIZE )));
 	//this is a terribly squeezed together function, lets call this optimisation
 	//it samples colour from shifted coordinates 
+	//return(tex2D(AnnSampler,texcoord+ BUFFER_PIXEL_SIZE*((flipx+pointint.x)%2)*float2(0,1)*sizX+ BUFFER_PIXEL_SIZE*((flipy+pointint.y)%2)*float2(1,0)*sizY  -BUFFER_PIXEL_SIZE*trunc(float2(sizY,sizX)/2-0.001)).rgb);
 	return(tex2D(AnnSampler,texcoord+ BUFFER_PIXEL_SIZE*((flipx+pointint.x)%2)*float2(0,1)*sizX+ BUFFER_PIXEL_SIZE*((flipy+pointint.y)%2)*float2(1,0)*sizY  -BUFFER_PIXEL_SIZE*trunc(float2(sizY,sizX)/2-0.001)).rgb);
+}
+
+float3 PS_PixelShiftX(float4 position : SV_Position, float2 texcoord : TEXCOORD) : SV_Target{  
+	//get coordinates in a easy to use per pixel term
+	int pointint = trunc((texcoord.x/ (SectionSizeX*BUFFER_PIXEL_SIZE.x )));
+	//this is a terribly squeezed together function, lets call this optimisation
+	//it samples colour from shifted coordinates 
+	//return(tex2D(AnnSampler,texcoord+ BUFFER_PIXEL_SIZE*((flipx+pointint.x)%2)*float2(0,1)*sizX+ BUFFER_PIXEL_SIZE*((flipy+pointint.y)%2)*float2(1,0)*sizY  -BUFFER_PIXEL_SIZE*trunc(float2(sizY,sizX)/2-0.001)).rgb);
+	return(tex2D(AnnSampler,texcoord+ BUFFER_PIXEL_SIZE*((flipx+pointint)%2)*float2(0,1)*sizX  -BUFFER_PIXEL_SIZE*float2(0,trunc(sizX/2-0.001))).rgb);
+}
+float3 PS_PixelShiftY(float4 position : SV_Position, float2 texcoord : TEXCOORD) : SV_Target{  
+	//get coordinates in a easy to use per pixel term
+	int pointint = trunc((texcoord.y/ (SectionSizeY*BUFFER_PIXEL_SIZE.y )));
+	//this is a terribly squeezed together function, lets call this optimisation
+	//it samples colour from shifted coordinates 
+	//return(tex2D(AnnSampler,texcoord+ BUFFER_PIXEL_SIZE*((flipx+pointint.x)%2)*float2(0,1)*sizX+ BUFFER_PIXEL_SIZE*((flipy+pointint.y)%2)*float2(1,0)*sizY  -BUFFER_PIXEL_SIZE*trunc(float2(sizY,sizX)/2-0.001)).rgb);
+	return(tex2D(AnnSampler,texcoord+ BUFFER_PIXEL_SIZE*((flipx+pointint)%2)*float2(1,0)*sizY  -BUFFER_PIXEL_SIZE*float2(trunc(sizY/2-0.001),0)).rgb);
 }
 
 /*-----------------.
 | :: Techniques :: |
 '-----------------*/
-technique PixelShifter
+technique PixelShifterX
+{
+	pass PixelShift{
+		VertexShader=PostProcessVS;
+		PixelShader=PS_PixelShiftX;
+	}
+}
+
+technique PixelShifterY
+{
+	pass PixelShift{
+		VertexShader=PostProcessVS;
+		PixelShader=PS_PixelShiftY;
+	}
+}
+
+technique PixelShift_W_Duping
 {
 	pass PixelShift{
 		VertexShader=PostProcessVS;
