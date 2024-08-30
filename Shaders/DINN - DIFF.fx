@@ -16,8 +16,8 @@
 '---------------*/
 #include "ReShadeUI.fxh"
 #include "ReShade.fxh"
-#include "shared/cShade.fxh"
-#include "shared/cBlur.fxh"
+//#include "shared/cShade.fxh"
+//#include "shared/cBlur.fxh"
 //credit for this effect goes to the people who made cshade, papadanku
 
 /*------------------.
@@ -217,16 +217,20 @@ float3 BlurPass( float2 Tex, bool Horizontal, float SIGMA, sampler SAMP){
 			return tex2Dlod(SAMP, float4(Tex, 0.0, 0.0)).rgb;
 		}
 		else
-		{
+		{	
+			float GausConst = rsqrt(2.0 * acos(-1.0) * (SIGMA * SIGMA));
 			// Sample and weight center first to get even number sides
-	        float TotalWeight = CBlur_GetGaussianWeight(0.0, SIGMA);
+	        float TotalWeight = GausConst;
 	        float3 OutputColor = tex2D(SAMP, Tex).rgb * TotalWeight;
 	
 	        for(float i = 1.0; i < KernelSize; i += 2.0)
 	        {
-	            float LinearWeight = 0.0;
-	            float LinearOffset = CBlur_GetGaussianOffset(i, SIGMA, LinearWeight);
-	            OutputColor += tex2Dlod(SAMP, float4(Tex - LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
+	            //float LinearOffset = CBlur_GetGaussianOffset(i, SIGMA, LinearWeight);
+	   		 float Weight1 = GausConst * exp(-(i * i) / (2.0 * SIGMA * SIGMA));         
+				float Weight2 = GausConst * exp(-((i+1.0) * (i+1.0)) / (2.0 * SIGMA * SIGMA));         
+				float LinearWeight = Weight1+Weight2;
+	            float LinearOffset = i+Weight2/LinearWeight;
+				OutputColor += tex2Dlod(SAMP, float4(Tex - LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
 	            OutputColor += tex2Dlod(SAMP, float4(Tex + LinearOffset * PixelSize, 0.0, 0.0)).rgb * LinearWeight;
 	            TotalWeight += LinearWeight * 2.0;
 	        }
@@ -416,4 +420,3 @@ technique DINNDX{
 	}
 
 }
-
